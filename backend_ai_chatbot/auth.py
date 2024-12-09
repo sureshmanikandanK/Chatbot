@@ -81,6 +81,7 @@ def register_routes(app):
         if 'username' not in data or 'password' not in data:
             return jsonify({'error': 'Username and password required'}), 400
 
+
         user = User.query.filter_by(username=data['username']).first()
         if not user or not check_password_hash(user.password, data['password']):
             return jsonify({'error': 'Invalid credentials'}), 401

@@ -47,24 +47,24 @@ def load_pdf_doc_split(file_path):
 #     store_data = db.save_local(path)
 #     return path 
 
-def embadding_and_store(chunked, file_name, bot_name, user_id):
+def embadding_and_store(chunked, file_name, bot_name, user_id, file_id):
     # Use embeddings with user-specific metadata
     model_name = "models/embedding-001"
     api_key = "AIzaSyA3-0m7MQxNzWZJzVyyOCmNlU_Z_q-SWiw"
     embeddings = GoogleGenerativeAIEmbeddings(model=model_name, google_api_key=api_key)  # Create embeddings
-
+ 
     # Add user-specific metadata to each chunk
     for doc in chunked:
         doc.metadata['user_id'] = user_id  # Associate user ID
         doc.metadata['file_name'] = file_name  # Optionally associate file name
-
+        doc.metadata['file_id'] = file_id
     # Create a single shared FAISS index
     db = FAISS.from_documents(chunked, embeddings)
 
     # Save to a shared directory
     path = f"./uploads/shared_index"
     if not os.path.exists(path):
-        os.makedirs(path)
+        os.makedirs(path) 
 
     db.save_local(path)
     return path

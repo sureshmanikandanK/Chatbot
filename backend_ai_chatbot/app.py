@@ -8,7 +8,7 @@ from models import db
 from routes import auth_routes, bot_routes, file_routes
 from flask_session import Session
 
-load_dotenv()
+load_dotenv() 
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -20,12 +20,12 @@ app.config['ALLOWED_EXTENSIONS'] = {"csv"}
 app.config['SESSION_TYPE'] = 'filesystem'
 # app.secret_key = os.getenv("SECRET_KEY")
 app.config['SECRET_KEY'] = 'Yw4f8V2x!sD@5Q%3nKf&j8Z2wFh*Lz8t'
-class Config:
-    # Other configurations
-    ROLE_PERMISSIONS = {
-        'admin': ['upload_file', 'create_bot', 'view_all_bots', 'view_all_users'],
-        'user': ['upload_file', 'create_bot', 'view_own_bots'],
-    }
+# class Config:
+#     # Other configurations
+#     ROLE_PERMISSIONS = {
+#         'admin': ['upload_file', 'create_bot', 'view_all_bots', 'view_all_users'],
+#         'user': ['upload_file', 'create_bot', 'view_own_bots'],
+#     }
 
 # Initialize extensions
 CORS(app)

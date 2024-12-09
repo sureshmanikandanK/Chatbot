@@ -1,48 +1,58 @@
-
 // import React, { useState, useEffect } from 'react';
 // import { useParams, useNavigate } from 'react-router-dom';
 // import axios from 'axios';
-// import { Button, TextField, Typography, Box, IconButton, CircularProgress, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
-// import { Send as SendIcon, History as HistoryIcon, Error as ErrorIcon, Upload as UploadIcon, ExpandMore as ExpandMoreIcon, Logout as LogoutIcon } from '@mui/icons-material';
-// import { Tooltip } from '@mui/material';
+// import {
+//   TextField,
+//   Box,
+//   IconButton,
+//   CircularProgress,
+//   Tooltip,
+//   List,
+//   ListItem,
+//   ListItemText,
+//   Divider,
+//   Typography,
+//   Alert,
+// } from '@mui/material';
+// import {
+//   Send as SendIcon,
+//   Upload as UploadIcon,
+//   Logout as LogoutIcon,
+//   Chat as ChatIcon
+//   // Edit as EditIcon,
+// } from '@mui/icons-material';
 
 // function ChatPage() {
-//   const { botName } = useParams();  // Get the selected bot name from the URL
-//   const navigate = useNavigate();  // Hook for navigation
+//   const { botName } = useParams();
+//   const navigate = useNavigate();
 //   const [question, setQuestion] = useState('');
-//   const [response, setResponse] = useState('');
 //   const [chatHistory, setChatHistory] = useState([]);
 //   const [error, setError] = useState('');
 //   const [bots, setBots] = useState([]);
-//   const [loading, setLoading] = useState(false);  // Track loading state
-//   const [historyPage, setHistoryPage] = useState(1);  // To handle loading history in pages
-//   const [hasMoreHistory, setHasMoreHistory] = useState(false);  // Track if there are more chats to load
-//   const userId = sessionStorage.getItem('userId'); // Retrieve userId from sessionStorage
+//   const [selectedBot, setSelectedBot] = useState(''); // Initially empty
+//   const [loading, setLoading] = useState(false);
+//   const userId = sessionStorage.getItem('userId');
 
-
-
-//   const handleLogout = () => {
-//     sessionStorage.clear();  // Clear session storage
-//     navigate('/');  // Redirect to the login page
-//   };
-//   // Fetch list of bots associated with the user
 //   const fetchBots = async () => {
 //     try {
 //       const res = await axios.get('http://localhost:5000/bots', {
-//         headers: {
-//           'UserId': userId
-//         }
+//         headers: { UserId: userId },
 //       });
 //       setBots(res.data.bots);
+
+//       // Select the first bot automatically if bots are available
+//       if (res.data.bots.length > 0) {
+//         const firstBot = res.data.bots[0].bot_name;
+//         setSelectedBot(firstBot); // Automatically set the first bot
+//       }
 //     } catch (err) {
-//       setError("Failed to fetch bots.");
+//       setError('Failed to fetch bots.');
 //       console.error(err);
 //     }
 //   };
 
-//   // Fetch chat history for the selected bot with pagination
-//   const fetchChatHistory = async (botName, page = 1) => {
-//     const bot = bots.find(b => b.bot_name === botName);
+//   const fetchChatHistory = async (botName) => {
+//     const bot = bots.find((b) => b.bot_name === botName);
 //     if (!bot) {
 //       setError('Bot not found.');
 //       return;
@@ -50,85 +60,81 @@
 
 //     try {
 //       const res = await axios.get(
-//         `http://localhost:5000/chat/history?file_id=${bot.file_id}&page=${page}`,
-//         {
-//           headers: {
-//             'UserId': userId
-//           }
-//         }
+//         `http://localhost:5000/chat/history?file_id=${bot.file_id}`,
+//         { headers: { UserId: userId } }
 //       );
-      
-//       if (page === 1) {
-//         setChatHistory(res.data.history); // Set initial chat history
-//       } else {
-//         setChatHistory((prevHistory) => [...prevHistory, ...res.data.history]); // Append new history
-//       }
+//       const formattedHistory = res.data.history.flatMap((item) => [
+//         { sender: 'user', text: item.question },
+//         { sender: 'bot', text: item.response },
+//       ]);
 
-//       // If there are more history records to load, set hasMoreHistory to true
-//       setHasMoreHistory(res.data.history.length >= 10); // Check if we have 10 or more items
+//       setChatHistory(formattedHistory);
 //     } catch (err) {
-//       setError("Failed to fetch chat history.");
+//       setError('Failed to fetch chat history.');
 //       console.error(err);
 //     }
 //   };
 
-//   // Handle sending the question to the bot
 //   const handleSendQuestion = async () => {
+//     if (!selectedBot) {
+//       setError('Please select a bot first.');
+//       return;
+//     }
+
 //     if (!question.trim()) {
-//       setError("Please enter a question.");
+//       setError('Please enter a question.');
 //       return;
 //     }
 
-//     const bot = bots.find(b => b.bot_name === botName);
+//     const bot = bots.find((b) => b.bot_name === selectedBot);
 //     if (!bot) {
-//       setError("Invalid bot.");
+//       setError('Invalid bot.');
 //       return;
 //     }
 
-//     setLoading(true); // Start loading
+//     const userMessage = { sender: 'user', text: question };
+//     setChatHistory((prev) => [...prev, userMessage]);
+
+//     setLoading(true);
 
 //     try {
 //       const res = await axios.post(
-//         'http://localhost:5000/chat', 
-//         {
-//           question: question,
-//           file_id: bot.file_id  // Send the selected bot's file_id
-//         },
-//         {
-//           headers: {
-//             'UserId': userId  // Send the userId in the header for authentication
-//           }
-//         }
+//         'http://localhost:5000/chat',
+//         { question, file_id: bot.file_id },
+//         { headers: { UserId: userId } }
 //       );
-      
-//       setResponse(res.data.response); // Set the response from the bot
-//       setQuestion(''); // Clear the question input
-//       fetchChatHistory(botName); // Refresh chat history after a new message is sent
+
+//       const botMessage = { sender: 'bot', text: res.data.response };
+//       setChatHistory((prev) => [...prev, botMessage]);
+//       setQuestion('');
+//       setError(''); // Clear error after sending the message successfully
 //     } catch (err) {
-//       setError("Failed to send message. Please try again.");
+//       setError('Failed to send message. Please try again.');
 //       console.error(err);
 //     } finally {
-//       setLoading(false); // Stop loading when the request is complete
+//       setLoading(false);
 //     }
 //   };
 
-//   // Handle selecting a chat history item
-//   const handleSelectChat = (selectedQuestion) => {
-//     setQuestion(selectedQuestion);  // Set selected chat question in the input
-//     setResponse('');  // Clear the previous response
-//     handleSendQuestion();  // Trigger bot response based on selected chat
+//   const handleLogout = async () => {
+//     await saveConversation();
+//     sessionStorage.clear();
+//     navigate('/');
 //   };
 
-//   // Navigate to upload page
-//   const handleGoToUploadPage = () => {
-//     navigate('/upload');  // Navigate to upload page
+//   const saveConversation = async () => {
+//     try {
+//       await axios.post(
+//         'http://localhost:5000/chat/history',
+//         { chatHistory, botName: selectedBot },
+//         { headers: { UserId: userId } }
+//       );
+//     } catch (err) {
+//       console.error('Failed to save conversation:', err);
+//     }
 //   };
 
-//   // Load more history when clicked
-//   const handleLoadMoreHistory = () => {
-//     setHistoryPage((prevPage) => prevPage + 1);  // Increment page count
-//     fetchChatHistory(botName, historyPage + 1); // Fetch next page of history
-//   };
+//   const handleGoToUploadPage = () => navigate('/upload');
 
 //   useEffect(() => {
 //     if (userId) {
@@ -137,540 +143,273 @@
 //   }, [userId]);
 
 //   useEffect(() => {
-//     if (botName && bots.length > 0) {
-//       fetchChatHistory(botName);  // Fetch initial chat history when botName or bots change
+//     // Fetch chat history only if a bot is selected and bots have been loaded
+//     if (selectedBot && bots.length > 0) {
+//       fetchChatHistory(selectedBot);
 //     }
-//   }, [botName, bots]);
+//   }, [selectedBot, bots]); // Trigger this effect when selectedBot or bots change
 
 //   return (
-//     <Box sx={{ display: 'flex', height: '100vh', position: 'relative' }}>
-//       {/* Chat History Section */}
+//     <Box
+//       sx={{
+//         display: 'flex',
+//         height: '100vh',
+//         backgroundColor: '#f7f7f7',
+//       }}
+//     >
+//       {/* Left Sidebar - List of Bots */}
 //       <Box
 //         sx={{
-//           width: 300,
-//           borderRight: '1px solid #ccc',
-//           padding: 2,
+//           width: '300px',
+//           height: '100%',
+//           backgroundColor: '#fff',
+//           padding: '16px',
+//           borderRight: '1px solid #ddd',
 //           display: 'flex',
 //           flexDirection: 'column',
 //         }}
 //       >
-//         <Typography variant="h6" sx={{ marginBottom: 2 }}>
-//           <HistoryIcon sx={{ marginRight: 1 }} />
-//           Chat History
-//         </Typography>
+//         {/* Available Bots Header and Upload Button */}
+//         <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+//           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
+//             Available Bots
+//           </Typography>
+//           <Tooltip title="Upload Bot" arrow>
+//             <IconButton
+//               onClick={handleGoToUploadPage}
+//               sx={{
+//                 backgroundColor: '#00796b',
+//                 color: 'white',
+//                 '&:hover': {
+//                   backgroundColor: '#005a4d',
+//                 },
+//               }}
+//             >
+//               <UploadIcon />
+//             </IconButton>
+//           </Tooltip>
+//         </Box>
 
-//         {error && (
-//           <Alert severity="error" sx={{ marginBottom: 2 }}>
-//             <ErrorIcon sx={{ marginRight: 1 }} />
-//             {error}
-//           </Alert>
-//         )}
+//         <Divider sx={{ marginBottom: 2 }} />
 
-//         {/* Display chat history */}
-//         <List>
-//           {chatHistory.length > 0 ? (
-//             chatHistory.map((item, index) => (
-//               <ListItem
-//                 button
-//                 key={index}
-//                 onClick={() => handleSelectChat(item.question)}
+        // <List>
+        //   {bots.map((bot) => (
+        //     <ListItem
+        //       button
+        //       key={bot.id}
+        //       onClick={() => {
+        //         setSelectedBot(bot.bot_name);
+        //         fetchChatHistory(bot.bot_name);
+        //         setError('');
+        //       }}
+        //       sx={{
+        //         padding: '10px 16px',
+        //         backgroundColor: selectedBot === bot.bot_name ? '#00796b' : 'transparent',
+        //         color: selectedBot === bot.bot_name ? 'white' : 'black',
+        //         borderRadius: '8px',
+        //         boxShadow: selectedBot === bot.bot_name ? '0 4px 10px rgba(0, 0, 0, 0.2)' : 'none',
+        //         marginBottom: '10px',
+        //         display: 'flex',
+        //         alignItems: 'center',
+        //         '&:hover': {
+        //           backgroundColor: '#999999',
+        //         },
+        //       }}
+        //     >
+        //       <IconButton sx={{ marginRight: 2 }}>
+        //       <ChatIcon sx={{ color: selectedBot === bot.bot_name ? 'white' : 'black' }} /> {/* Changed to Chat Icon */}
+        //       </IconButton>
+        //       <ListItemText primary={bot.bot_name} />
+        //     </ListItem>
+        //   ))}
+        // </List>
+//       </Box>
+
+//       {/* Right Side - Chat Area */}
+//       <Box
+//         sx={{
+//           width: 'calc(100% - 300px)', // Adjust the width based on the left section
+//           height: '100%',
+//           backgroundColor: 'white',
+//           display: 'flex',
+//           flexDirection: 'column',
+//         }}
+//       >
+//         {/* Top Bar */}
+//         <Box
+//           sx={{
+//             padding: '16px',
+//             backgroundColor: '#fff',
+//             color: '#222',
+//             display: 'flex',
+//             justifyContent: 'space-between',
+//             alignItems: 'center',
+//             fontWeight: 600,
+//           }}
+//         >
+//           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
+//             Chat with {selectedBot || 'Select a Bot'}
+//           </Typography>
+
+//           <Box>
+//             <Tooltip title="LogOut" arrow>
+//               <IconButton
+//                 onClick={handleLogout}
 //                 sx={{
-//                   padding: 1,
-//                   borderBottom: '1px solid #ddd',
-//                   '&:hover': {
-//                     backgroundColor: '#f0f0f0',
-//                   },
+//                   color: 'black',
 //                 }}
 //               >
-//                 <ListItemText
-//                   primary={`Q: ${item.question}`}
-//                   secondary={item.response ? `A: ${item.response}` : null}
-//                 />
-//               </ListItem>
-//             ))
-//           ) : (
-//             <Typography variant="body2" color="textSecondary">No chat history available.</Typography>
-//           )}
-//         </List>
-
-//         {/* "More" button if there are more than 10 chat items */}
-//         {hasMoreHistory && (
-//           <Box sx={{ textAlign: 'center', marginTop: 2 }}>
-//             <Button
-//               variant="outlined"
-//               color="primary"
-//               endIcon={<ExpandMoreIcon />}
-//               onClick={handleLoadMoreHistory}
-//               sx={{
-//                 borderRadius: 20,
-//                 padding: '8px 16px',
-//                 fontWeight: 'bold',
-//                 '&:hover': {
-//                   backgroundColor: '#e0e0e0',
-//                   transform: 'scale(1.05)',
-//                   transition: 'transform 0.2s ease, background-color 0.3s ease',
-//                 },
-//               }}
-//             >
-//               Load More
-//             </Button>
-//           </Box>
-//         )}
-//       </Box>
-
-//       {/* Chat Interface Section */}
-//       <Box
-//         sx={{
-//           flexGrow: 1,
-//           padding: 3,
-//           display: 'flex',
-//           flexDirection: 'column',
-//           justifyContent: 'space-between',
-//         }}
-//       >
-//         <Typography variant="h4" gutterBottom>
-//           Chat with {botName}
-//         </Typography>
-
-//         {/* Display response from bot */}
-//         {response && (
-//           <Box sx={{ padding: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #ddd', marginBottom: 2 }}>
-//             <Typography variant="body1">
-//               <strong>Bot:</strong> {response}
-//             </Typography>
-//           </Box>
-//         )}
-
-//         {/* Question input and send button */}
-//         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-//           <TextField
-//             value={question}
-//             onChange={(e) => setQuestion(e.target.value)}
-//             placeholder="Ask a question..."
-//             variant="outlined"
-//             fullWidth
-//             multiline
-//             rows={4}
-//             sx={{ marginBottom: 2 }}
-//           />
-//                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-//             <IconButton
-//               onClick={handleSendQuestion}
-//               color="primary"
-//               disabled={loading}
-//               sx={{
-//                 backgroundColor: '#00796b',
-//                 color: 'white',
-//                 '&:hover': {
-//                   backgroundColor: '#004d40',
-//                 },
-//               }}
-//             >
-//               {loading ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-//             </IconButton>
+//                 <LogoutIcon />
+//               </IconButton>
+//             </Tooltip>
 //           </Box>
 //         </Box>
 
-//         {/* Upload Button */}
-//         <Tooltip title="Upload Bot" arrow>
-//   <IconButton
-//     onClick={handleGoToUploadPage}
-//     sx={{
-//       position: 'absolute',
-//       top: 16,
-//       right: 60,
-//       backgroundColor: '#00796b',
-//       color: 'white',
-//       '&:hover': {
-//         backgroundColor: '#004d40',
-//       },
-//     }}
-//   >
-//     <UploadIcon />
-//   </IconButton>
-// </Tooltip>
-
-//         {/* Logout Button */}
-//         <Tooltip title="LogOut" arrow>
-//         <IconButton
-//   onClick={handleLogout}
-//   sx={{
-//     position: 'absolute',
-//     top: 16, // Distance from the bottom edge
-//     right: 16,  // Distance from the right edge
-//     backgroundColor: '#d32f2f', // Red background for logout
-//     color: 'white',
-//     '&:hover': {
-//       backgroundColor: '#b71c1c', // Darker red on hover
-//     },
-//   }}
-// >
-//   <LogoutIcon />
-// </IconButton>
-// </Tooltip>
-
-//       </Box>
-//     </Box>
-//   );
-// }
-
-// export default ChatPage;
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { useParams, useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { Button, TextField, Typography, Box, IconButton, CircularProgress, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
-// import { Send as SendIcon, History as HistoryIcon, Error as ErrorIcon, Upload as UploadIcon, ExpandMore as ExpandMoreIcon, Logout as LogoutIcon } from '@mui/icons-material';
-// import { Tooltip } from '@mui/material';
-
-// function ChatPage() {
-//   const { botName } = useParams();  // Get the selected bot name from the URL
-//   const navigate = useNavigate();  // Hook for navigation
-//   const [question, setQuestion] = useState('');
-//   const [response, setResponse] = useState('');
-//   const [chatHistory, setChatHistory] = useState([]);
-//   const [error, setError] = useState('');
-//   const [bots, setBots] = useState([]);
-//   const [loading, setLoading] = useState(false);  // Track loading state
-//   const [historyPage, setHistoryPage] = useState(1);  // To handle loading history in pages
-//   const [hasMoreHistory, setHasMoreHistory] = useState(false);  // Track if there are more chats to load
-//   const userId = sessionStorage.getItem('userId'); // Retrieve userId from sessionStorage
-
-//   const handleLogout = () => {
-//     sessionStorage.clear();  // Clear session storage
-//     navigate('/');  // Redirect to the login page
-//   };
-
-//   // Fetch list of bots associated with the user
-//   const fetchBots = async () => {
-//     try {
-//       const res = await axios.get('http://localhost:5000/bots', {
-//         headers: {
-//           'UserId': userId
-//         }
-//       });
-//       setBots(res.data.bots);
-//     } catch (err) {
-//       setError("Failed to fetch bots.");
-//       console.error(err);
-//     }
-//   };
-
-//   // Fetch chat history for the selected bot with pagination
-//   const fetchChatHistory = async (botName, page = 1) => {
-//     const bot = bots.find(b => b.bot_name === botName);
-//     if (!bot) {
-//       setError('Bot not found.');
-//       return;
-//     }
-
-//     try {
-//       const res = await axios.get(
-//         `http://localhost:5000/chat/history?file_id=${bot.file_id}&page=${page}`,
-//         {
-//           headers: {
-//             'UserId': userId
-//           }
-//         }
-//       );
-      
-//       if (page === 1) {
-//         setChatHistory(res.data.history); // Set initial chat history
-//       } else {
-//         setChatHistory((prevHistory) => [...prevHistory, ...res.data.history]); // Append new history
-//       }
-
-//       // If there are more history records to load, set hasMoreHistory to true
-//       setHasMoreHistory(res.data.history.length >= 10); // Check if we have 10 or more items
-//     } catch (err) {
-//       setError("Failed to fetch chat history.");
-//       console.error(err);
-//     }
-//   };
-
-//   // Handle sending the question to the bot
-//   const handleSendQuestion = async () => {
-//     if (!question.trim()) {
-//       setError("Please enter a question.");
-//       return;
-//     }
-
-//     const bot = bots.find(b => b.bot_name === botName);
-//     if (!bot) {
-//       setError("Invalid bot.");
-//       return;
-//     }
-
-//     setLoading(true); // Start loading
-
-//     try {
-//       const res = await axios.post(
-//         'http://localhost:5000/chat', 
-//         {
-//           question: question,
-//           file_id: bot.file_id  // Send the selected bot's file_id
-//         },
-//         {
-//           headers: {
-//             'UserId': userId  // Send the userId in the header for authentication
-//           }
-//         }
-//       );
-      
-//       setResponse(res.data.response); // Set the response from the bot
-//       setQuestion(''); // Clear the question input
-//       fetchChatHistory(botName); // Refresh chat history after a new message is sent
-//     } catch (err) {
-//       setError("Failed to send message. Please try again.");
-//       console.error(err);
-//     } finally {
-//       setLoading(false); // Stop loading when the request is complete
-//     }
-//   };
-
-//   // Handle selecting a chat history item
-//   const handleSelectChat = (selectedQuestion) => {
-//     setQuestion(selectedQuestion);  // Set selected chat question in the input
-//     setResponse('');  // Clear the previous response
-//     handleSendQuestion();  // Trigger bot response based on selected chat
-//   };
-
-//   // Navigate to upload page
-//   const handleGoToUploadPage = () => {
-//     navigate('/upload');  // Navigate to upload page
-//   };
-
-//   // Load more history when clicked
-//   const handleLoadMoreHistory = () => {
-//     setHistoryPage((prevPage) => prevPage + 1);  // Increment page count
-//     fetchChatHistory(botName, historyPage + 1); // Fetch next page of history
-//   };
-
-//   useEffect(() => {
-//     if (userId) {
-//       fetchBots();
-//     }
-//   }, [userId]);
-
-//   useEffect(() => {
-//     if (botName && bots.length > 0) {
-//       fetchChatHistory(botName);  // Fetch initial chat history when botName or bots change
-//     }
-//   }, [botName, bots]);
-
-//   return (
-//     <Box sx={{ display: 'flex', height: '100vh', position: 'relative' }}>
-//       {/* Chat History Section */}
-//       <Box
-//         sx={{
-//           width: 300,
-//           borderRight: '1px solid #ccc',
-//           padding: 2,
-//           display: 'flex',
-//           flexDirection: 'column',
-//         }}
-//       >
-//         <Typography variant="h6" sx={{ marginBottom: 2 }}>
-//           <HistoryIcon sx={{ marginRight: 1 }} />
-//           Chat History
-//         </Typography>
-
+//         {/* Error Message */}
 //         {error && (
-//           <Alert severity="error" sx={{ marginBottom: 2 }}>
-//             <ErrorIcon sx={{ marginRight: 1 }} />
+//           <Alert
+//             severity="error"
+//             sx={{
+//               position: 'absolute',
+//               top: 70,
+//               left: 0,
+//               right: 0,
+//               margin: '0 16px',
+//             }}
+//           >
 //             {error}
 //           </Alert>
 //         )}
 
-//         {/* Display chat history */}
-//         <Box sx={{ overflowY: 'auto', flexGrow: 1, paddingBottom: 2 }}>
-//           {chatHistory.length > 0 ? (
-//             chatHistory.map((item, index) => (
-//               <Box key={index} sx={{ display: 'flex', flexDirection: 'column', marginBottom: 2 }}>
-//                 {/* User message */}
-//                 <Box sx={{ alignSelf: 'flex-start', maxWidth: '80%', backgroundColor: '#f1f1f1', padding: 1, borderRadius: 2 }}>
-//                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-//                     Q: {item.question}
-//                   </Typography>
-//                 </Box>
+//         <Divider sx={{ marginBottom: 2 }} />
 
-//                 {/* Bot response */}
-//                 {item.response && (
-//                   <Box sx={{ alignSelf: 'flex-end', maxWidth: '80%', backgroundColor: '#00796b', color: 'white', padding: 1, borderRadius: 2, marginTop: 1 }}>
-//                     <Typography variant="body2">
-//                       A: {item.response}
-//                     </Typography>
-//                   </Box>
-//                 )}
-//               </Box>
-//             ))
-//           ) : (
-//             <Typography variant="body2" color="textSecondary">No chat history available.</Typography>
+//         {/* Chat Messages */}
+//         <Box
+//           sx={{
+//             flexGrow: 1,
+//             overflowY: 'auto',
+//             padding: '16px',
+//             display: 'flex',
+//             flexDirection: 'column',
+//             gap: 2,
+//           }}
+//         >
+//           {chatHistory.map((message, index) => (
+            // <Box
+            //   key={index}
+            //   sx={{
+            //     display: 'flex',
+            //     justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+            //   }}
+            // >
+            //   <Box
+            //     sx={{
+            //       maxWidth: '75%',
+            //       padding: '12px',
+            //       borderRadius: '16px',
+            //       backgroundColor: message.sender === 'user' ? '#00796b' : '#f1f1f1',
+            //       color: message.sender === 'user' ? 'white' : 'black',
+            //       boxShadow: '0 1px 5px rgba(0, 0, 0, 0.1)',
+            //       fontSize: '0.95rem',
+            //     }}
+            //   >
+            //     {message.text}
+            //   </Box>
+            // </Box>
+//           ))}
+//           {loading && (
+//             <Box sx={{ textAlign: 'center' }}>
+//               <CircularProgress />
+//             </Box>
 //           )}
 //         </Box>
 
-//         {/* "More" button if there are more than 10 chat items */}
-//         {hasMoreHistory && (
-//           <Box sx={{ textAlign: 'center', marginTop: 2 }}>
-//             <Button
-//               variant="outlined"
-//               color="primary"
-//               endIcon={<ExpandMoreIcon />}
-//               onClick={handleLoadMoreHistory}
-//               sx={{
-//                 borderRadius: 20,
-//                 padding: '8px 16px',
-//                 fontWeight: 'bold',
-//                 '&:hover': {
-//                   backgroundColor: '#e0e0e0',
-//                   transform: 'scale(1.05)',
-//                   transition: 'transform 0.2s ease, background-color 0.3s ease',
-//                 },
-//               }}
-//             >
-//               Load More
-//             </Button>
-//           </Box>
-//         )}
-//       </Box>
-
-//       {/* Chat Interface Section */}
-//       <Box
-//         sx={{
-//           flexGrow: 1,
-//           padding: 3,
-//           display: 'flex',
-//           flexDirection: 'column',
-//           justifyContent: 'space-between',
-//         }}
-//       >
-//         <Typography variant="h4" gutterBottom>
-//           Chat with {botName}
-//         </Typography>
-
-//         {/* Display response from bot */}
-//         {response && (
-//           <Box sx={{ padding: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #ddd', marginBottom: 2 }}>
-//             <Typography variant="body1">
-//               <strong>Bot:</strong> {response}
-//             </Typography>
-//           </Box>
-//         )}
-
-//         {/* Question input and send button */}
-//         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-//           <TextField
-//             value={question}
-//             onChange={(e) => setQuestion(e.target.value)}
-//             placeholder="Ask a question..."
-//             variant="outlined"
-//             fullWidth
-//             multiline
-//             rows={4}
-//             sx={{ marginBottom: 2 }}
-//           />
-//           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-//             <IconButton
-//               onClick={handleSendQuestion}
-//               color="primary"
-//               disabled={loading}
-//               sx={{
-//                 backgroundColor: '#00796b',
-//                 color: 'white',
-//                 '&:hover': {
-//                   backgroundColor: '#004d40',
-//                 },
-//               }}
-//             >
-//               {loading ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-//             </IconButton>
-//           </Box>
-//         </Box>
-
-//         {/* Upload Button */}
-//         <Tooltip title="Upload Bot" arrow>
-//           <IconButton
-//             onClick={handleGoToUploadPage}
-//             sx={{
-//               position: 'absolute',
-//               top: 16,
-//               right: 60,
-//               backgroundColor: '#00796b',
-//               color: 'white',
-//               '&:hover': {
-//                 backgroundColor: '#004d40',
-//               },
-//             }}
-//           >
-//             <UploadIcon />
-//           </IconButton>
-//         </Tooltip>
-
-//         {/* Logout Button */}
-//         <Tooltip title="LogOut" arrow>
-//           <IconButton
-//             onClick={handleLogout}
-//             sx={{
-//               position: 'absolute',
-//               top: 16,
-//               right: 16,
-//               backgroundColor: '#d32f2f',
-//               color: 'white',
-//               '&:hover': {
-//                 backgroundColor: '#b71c1c',
-//               },
-//             }}
-//           >
-//             <LogoutIcon />
-//           </IconButton>
-//         </Tooltip>
-
+//         {/* Input Section */}
+        // <Box
+        //   sx={{
+        //     display: 'flex',
+        //     alignItems: 'center',
+        //     padding: '16px',
+        //     backgroundColor: '#fff',
+        //     borderTop: '1px solid #ddd',
+        //   }}
+        // >
+        //   <TextField
+        //     variant="outlined"
+        //     placeholder="Ask a question..."
+        //     fullWidth
+        //     value={question}
+        //     onChange={(e) => setQuestion(e.target.value)}
+        //     disabled={loading}
+        //     sx={{ marginRight: 2 }}
+        //   />
+        //   <IconButton
+        //     color="primary"
+        //     onClick={handleSendQuestion}
+        //     disabled={loading}
+        //   >
+        //     <SendIcon />
+        //   </IconButton>
+        // </Box>
 //       </Box>
 //     </Box>
 //   );
 // }
 
 // export default ChatPage;
-
 
 
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import axios from 'axios';
 import {
   TextField,
-  Typography,
   Box,
   IconButton,
   CircularProgress,
   Tooltip,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Typography,
+  Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button
 } from '@mui/material';
 import {
   Send as SendIcon,
   Upload as UploadIcon,
   Logout as LogoutIcon,
+  Chat as ChatIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 
 function ChatPage() {
   const { botName } = useParams();
   const navigate = useNavigate();
   const [question, setQuestion] = useState('');
-  const [chatHistory, setChatHistory] = useState([]); // Interleaved chat
+  const [chatHistory, setChatHistory] = useState([]);
   const [error, setError] = useState('');
   const [bots, setBots] = useState([]);
+  const [selectedBot, setSelectedBot] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
+  const [botCreationModalOpen, setBotCreationModalOpen] = useState(false); // Separate modal for bot creation
+  const [file, setFile] = useState(null);
+  const [botNameInput, setBotNameInput] = useState('');
+  const [fileId, setFileId] = useState(null);
+  const [botError, setBotError] = useState('');
+  const [botLoading, setBotLoading] = useState(false);
   const userId = sessionStorage.getItem('userId');
-
-  const handleLogout = async () => {
-    await saveConversation();
-    sessionStorage.clear();
-    navigate('/');
-  };
+  const username = sessionStorage.getItem('username');
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+  // const fileId = bot.file_id;
 
   const fetchBots = async () => {
     try {
@@ -678,14 +417,21 @@ function ChatPage() {
         headers: { UserId: userId },
       });
       setBots(res.data.bots);
+
+      if (res.data.bots.length > 0) {
+        const firstBot = res.data.bots[0].bot_name;
+        setSelectedBot(firstBot);
+      }
     } catch (err) {
       setError('Failed to fetch bots.');
       console.error(err);
     }
   };
+  
 
   const fetchChatHistory = async (botName) => {
     const bot = bots.find((b) => b.bot_name === botName);
+    console.log("bot : ",bot)
     if (!bot) {
       setError('Bot not found.');
       return;
@@ -695,13 +441,13 @@ function ChatPage() {
       const res = await axios.get(
         `http://localhost:5000/chat/history?file_id=${bot.file_id}`,
         { headers: { UserId: userId } }
+      
       );
-
+      setFileId(bot.file_id)
       const formattedHistory = res.data.history.flatMap((item) => [
         { sender: 'user', text: item.question },
         { sender: 'bot', text: item.response },
       ]);
-
       setChatHistory(formattedHistory);
     } catch (err) {
       setError('Failed to fetch chat history.');
@@ -709,13 +455,43 @@ function ChatPage() {
     }
   };
 
+  const handleDeleteChatHistory = async (botId) => {
+    console.log("botId: ",botId)
+    try {
+        // Send a DELETE request to the backend with the botId (file_id) as a query parameter
+        const response = await axios.delete(`http://localhost:5000/chat/history/${botId}`, {
+            headers: { UserId: userId }, // Pass UserId in the headers
+            params: { file_id: botId }, // Sending botId (file_id) as query parameter
+        });
+
+        // After successful deletion, clear the chat history in the frontend
+        if (selectedBot === botId) {
+            setChatHistory([]); // Clear the current chat history in the UI
+        }
+
+        setError(''); // Reset any error
+        alert("Chat history deleted successfully.");
+        window.location.reload(); // Show success message
+    } catch (err) {
+        setError('Failed to delete chat history.');
+        console.error(err);
+    }
+};
+
+
+
   const handleSendQuestion = async () => {
+    if (!selectedBot) {
+      setError('Please select a bot first.');
+      return;
+    }
+
     if (!question.trim()) {
       setError('Please enter a question.');
       return;
     }
 
-    const bot = bots.find((b) => b.bot_name === botName);
+    const bot = bots.find((b) => b.bot_name === selectedBot);
     if (!bot) {
       setError('Invalid bot.');
       return;
@@ -736,6 +512,8 @@ function ChatPage() {
       const botMessage = { sender: 'bot', text: res.data.response };
       setChatHistory((prev) => [...prev, botMessage]);
       setQuestion('');
+      setError('');
+      setFileId(bot.file_id)
     } catch (err) {
       setError('Failed to send message. Please try again.');
       console.error(err);
@@ -744,19 +522,127 @@ function ChatPage() {
     }
   };
 
-  const saveConversation = async () => {
+  // const handleLogout = async () => {
+  //   sessionStorage.clear();
+  //   navigate('/');
+  // };
+
+
+  const handleLogout = async () => {
     try {
-      await axios.post(
-        'http://localhost:5000/chat/save',
-        { chatHistory, botName },
-        { headers: { UserId: userId } }
-      );
+      sessionStorage.clear(); // Clear session storage
+      navigate('/login'); // Redirect to the home page or any page you prefer after logout
     } catch (err) {
-      console.error('Failed to save conversation:', err);
+      console.error('Logout failed:', err);
     }
   };
 
-  const handleGoToUploadPage = () => navigate('/upload');
+  // Function to open the logout confirmation dialog
+  const handleOpenLogoutDialog = () => {
+    setOpenLogoutDialog(true);
+  };
+
+  // Function to close the logout confirmation dialog
+  const handleCloseLogoutDialog = () => {
+    setOpenLogoutDialog(false);
+  };
+
+  const handleGoToUploadPage = () => {
+    setFileUploadModalOpen(true); // Open file upload modal
+  };
+
+  const handleFileUpload = async () => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post('http://localhost:5000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'userId': userId,
+        },
+      });
+
+      const { file_id } = response.data;
+      setFileId(file_id);
+
+      // Open the bot creation modal after successful file upload
+      setFileUploadModalOpen(false);
+      setBotCreationModalOpen(true);
+    } catch (err) {
+      setError('File upload failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleCreateBot = async () => {
+    if (!botNameInput || !fileId) {
+      setBotError('Bot name and file ID are required');
+      return;
+    }
+
+    setBotLoading(true);
+
+    try {
+      await axios.post('http://localhost:5000/bot-create', {
+        bot_name: botNameInput,
+        file_id: fileId,
+      }, {
+        headers: {
+          'userId': userId,
+        },
+      });
+
+      // Close the bot creation modal and navigate after successful bot creation
+      setBotCreationModalOpen(false);
+      window.location.reload();
+      
+    } catch (err) {
+      setBotError('Failed to create bot');
+    } finally {
+      setBotLoading(false);
+    }
+  };
+
+
+  const handleDeleteBot = async (botId) => {
+    console.log('Bot ID:', botId); // Log the botId
+  
+    if (!botId) {
+      setError('Invalid Bot ID');
+      return; // Prevent API call if botId is invalid
+    }
+  
+    try {
+      // Send DELETE request to the backend with botId (file_id)
+      const response = await axios.delete(`http://localhost:5000/bot-delete?file_id=${botId}`, {
+        headers: { UserId: userId },
+      });
+  
+      // Assuming the response is correct and includes a success message
+      setBots((prevBots) => prevBots.filter((bot) => bot.file_id !== botId));
+  
+      // If the bot being deleted is the selected bot, clear the chat
+      if (selectedBot === botId) {
+        setSelectedBot('');
+        setChatHistory([]);
+      }
+  
+      setError(''); // Reset any error
+      alert('Bot deleted successfully.');
+      window.location.reload();
+    } catch (err) {
+      setError('Failed to delete the bot.');
+      console.error(err);
+    }
+  };
+  
+  
+
 
   useEffect(() => {
     if (userId) {
@@ -765,166 +651,282 @@ function ChatPage() {
   }, [userId]);
 
   useEffect(() => {
-    if (botName && bots.length > 0) {
-      fetchChatHistory(botName);
+    if (selectedBot) {
+      setChatHistory([]);
+      setError('');
+      setQuestion('');
+      fetchChatHistory(selectedBot);
     }
-  }, [botName, bots]);
+  }, [selectedBot, bots]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f9f9f9',
-        padding: 2,
-      }}
-    >
-      {/* Chat Container */}
-      <Box
+    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#f7f7f7' }}>
+      {/* Left Sidebar - List of Bots */}
+      <Box sx={{ width: '300px', height: '100%', backgroundColor: '#fff', padding: '16px', borderRight: '1px solid #ddd' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 900 }}>Available Bots</Typography>
+          <Tooltip title="Create Bot" arrow>
+            <IconButton onClick={handleGoToUploadPage} sx={{ backgroundColor: 'primary', color: 'black',
+              '&:hover': {
+            backgroundColor: '#00796b', // Set background color to red when hovered
+          },
+             }}>
+              <UploadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Divider sx={{ marginBottom: 2 }} />
+        
+        <List>
+  {bots.length === 0 ? (
+    <ListItem>
+      <ListItemText primary="No bots available" />
+    </ListItem>
+  ) : (
+    bots.map((bot) => (
+      <ListItem
+        button
+        key={bot.id}
+        onClick={() => {
+          setSelectedBot(bot.bot_name);
+          fetchChatHistory(bot.bot_name);
+          setError('');
+        }}
         sx={{
-          width: '60%',
-          maxWidth: 800,
-          height: '90%',
-          backgroundColor: 'white',
-          borderRadius: 4,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          padding: '10px 16px',
+          backgroundColor: selectedBot === bot.bot_name ? '#00796b' : 'transparent',
+          color: selectedBot === bot.bot_name ? 'white' : 'black',
+          borderRadius: '8px',
+          boxShadow: selectedBot === bot.bot_name ? '0 4px 10px rgba(0, 0, 0, 0.2)' : 'none',
+          marginBottom: '10px',
           display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
+          alignItems: 'center',
+          '&:hover': {
+            backgroundColor: '#999999',
+          },
         }}
       >
-        {/* Chat Header */}
-        <Box
-          sx={{
-            padding: 2,
-            borderBottom: '1px solid #ddd',
-            textAlign: 'center',
-            backgroundColor: '#f5f5f5',
-          }}
-        >
-          <Typography variant="h6">
-            Chat with <strong>{botName}</strong>
-          </Typography>
-        </Box>
-
-        {/* Chat Messages */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflowY: 'auto',
-            padding: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
-          {chatHistory.map((message, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
-              }}
-            >
-              <Box
-                sx={{
-                  maxWidth: '75%',
-                  padding: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: message.sender === 'user' ? '#e0e0e0' : '#f1f1f1',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                  fontSize: '0.95rem',
-                }}
-              >
-                {message.text}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-
-{/* Chat Input */}
-<Box
+        <IconButton sx={{ marginRight: 2 }}>
+          <ChatIcon sx={{ color: selectedBot === bot.bot_name ? 'white' : 'black' }} />
+        </IconButton>
+        <ListItemText primary={bot.bot_name} />
+        <IconButton
+  onClick={(e) => {
+    e.stopPropagation(); // Prevent triggering the item selection on delete
+    console.log('Deleting bot:', bot.file_id); // Log the bot ID when the delete button is clicked
+    handleDeleteBot(bot.file_id); // Pass the bot's file_id to the delete handler
+  }}
   sx={{
-    borderTop: '1px solid #ddd',
-    padding: 2,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
+    marginLeft: 'auto',
+    color: 'red', // Set delete button color to red
+    '&:hover': {
+      backgroundColor: '#f5f5f5',
+    },
   }}
 >
-  <TextField
-    value={question}
-    onChange={(e) => setQuestion(e.target.value)}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // Prevent adding a new line
-        handleSendQuestion(); // Trigger the send function
-      }
-    }}
-    placeholder="Type your message..."
-    variant="outlined"
-    fullWidth
-    multiline
-    rows={2}
-  />
-  <IconButton
-    onClick={handleSendQuestion}
+  <DeleteIcon />
+</IconButton>
+
+      </ListItem>
+    ))
+  )}
+</List>
+
+
+
+      </Box>
+
+      {/* Right Side - Chat Area */}
+      <Box sx={{ width: 'calc(100% - 300px)', height: '100%', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ padding: '16px', backgroundColor: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{flexGrow: 1, fontWeight: 900 }} >Chat with {selectedBot || 'Select a Bot'}</Typography>
+          
+          <Tooltip title={username ? `${username}` : 'User not logged in'} arrow>
+      <IconButton
+        sx={{
+          // marginRight: 'px',
+          '&:hover': {
+            backgroundColor: 'lightblue', // Set background color to light blue when hovered
+          },
+        }}
+      >
+        <AccountCircleIcon />
+      </IconButton>
+    </Tooltip>
+          <Tooltip title="LogOut" arrow>
+            {/* <IconButton onClick={handleLogout}><LogoutIcon /></IconButton> */}
+            <IconButton
+        onClick={handleOpenLogoutDialog}
+        sx={{
+          '&:hover': {
+            backgroundColor: 'red', // Set background color to red when hovered
+          },
+        }}
+      >
+        <LogoutIcon />
+      </IconButton>
+
+      
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={openLogoutDialog} onClose={handleCloseLogoutDialog}>
+        <DialogTitle>Confirm Logout</DialogTitle>
+        <DialogContent>
+          Are you sure you want to log out?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLogoutDialog} color="secondary">
+            No
+          </Button>
+          <Button
+            onClick={() => {
+              handleLogout(); // Trigger the logout
+              handleCloseLogoutDialog(); // Close the dialog
+            }}
+            color="primary"
+          >
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+          </Tooltip>
+        </Box>
+
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <Divider sx={{ marginBottom: 2 }} />
+
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: '16px' }}>
+          {chatHistory.map((message, index) => (
+            <Box
+            key={index}
+            sx={{
+              display: 'flex',
+              justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: '70%',
+                padding: '12px',
+                borderRadius: '16px',
+                backgroundColor: message.sender === 'user' ? '#00796b' : '#f1f1f1',
+                color: message.sender === 'user' ? 'white' : 'black',
+                boxShadow: '0 1px 5px rgba(0, 0, 0, 0.1)',
+                fontSize: '0.95rem',
+              }}
+            >
+              {message.text}
+            </Box>
+          </Box>
+          ))}
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <CircularProgress />
+            </Box>
+          )}
+        </Box>
+
+        <Box
+  sx={{
+    display: 'flex',
+    alignItems: 'center',
+    padding: '16px',
+    backgroundColor: '#fff',
+    borderTop: '1px solid #ddd',
+  }}
+><TextField
+  variant="outlined"
+  placeholder="Ask a question..."
+  fullWidth
+  value={question}
+  onChange={(e) => setQuestion(e.target.value)}
+  disabled={loading}
+  sx={{ marginRight: 2 }}
+/>
+<IconButton
+  sx={{
+    marginLeft: -2,
+    color: '#00796b',
+    '&:hover': {
+      background: '#87CEEB',
+    },
+  }} // Custom color for the IconButton
+  onClick={handleSendQuestion}
+  disabled={loading}
+>
+  <SendIcon />
+</IconButton>
+
+<Tooltip title="Delete Chat History" arrow>
+  <Button
+    color="red"
+    startIcon={<DeleteIcon />}
+    onClick={() => handleDeleteChatHistory(fileId)}  // Pass function reference
     disabled={loading}
     sx={{
-      backgroundColor: '#00796b',
-      color: 'white',
-      '&:hover': {
-        backgroundColor: '#005a4d',
-      },
+      marginLeft: -2,
+      color: "red", // Adds spacing between the buttons
     }}
   >
-    {loading ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-  </IconButton>
+  </Button>
+</Tooltip>
+
+
 </Box>
 
       </Box>
 
-      {/* Upload Button */}
-      <Tooltip title="Upload Bot" arrow>
-        <IconButton
-          onClick={handleGoToUploadPage}
-          sx={{
-            position: 'absolute',
-            top: 16,
-            right: 60,
-            backgroundColor: '#e0e0e0',
-            color: '#555',
-            '&:hover': {
-              backgroundColor: '#c0c0c0',
-            },
-          }}
-        >
-          <UploadIcon />
-        </IconButton>
-      </Tooltip>
+      
 
-      {/* Logout Button */}
-      <Tooltip title="LogOut" arrow>
-        <IconButton
-          onClick={handleLogout}
-          sx={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            backgroundColor: '#e57373',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: '#d32f2f',
-            },
-          }}
-        >
-          <LogoutIcon />
-        </IconButton>
-      </Tooltip>
+      {/* File Upload Modal */}
+      <Dialog open={fileUploadModalOpen} onClose={() => setFileUploadModalOpen(false)}>
+        <DialogTitle>Upload File</DialogTitle>
+        <DialogContent>
+          <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+          {loading && <CircularProgress sx={{ display: 'block', marginTop: 2 }} />}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFileUploadModalOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleFileUpload} color="primary" disabled={loading}>
+            Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bot Creation Modal */}
+      <Dialog open={botCreationModalOpen} onClose={() => setBotCreationModalOpen(false)}>
+        <DialogTitle>Create Bot</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Bot Name"
+            value={botNameInput}
+            onChange={(e) => setBotNameInput(e.target.value)}
+          />
+          {botError && <Alert severity="error">{botError}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBotCreationModalOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleCreateBot} color="primary" disabled={botLoading}>
+            {botLoading ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 export default ChatPage;
+
+
+
+
+
+
+

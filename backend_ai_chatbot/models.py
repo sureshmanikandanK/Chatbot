@@ -63,6 +63,7 @@ class AI_info(db.Model):
     __tablename__ = 'AI_info'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     questions = db.Column(db.String(255), nullable=False)
+    responses = db.Column(db.Text, nullable=False)
     file_id = db.Column(db.Integer, db.ForeignKey('file_details.id'), nullable=False)  # Foreign key to File
     file_details = db.relationship('File', backref=db.backref('AI_info', lazy=True))  # Corrected relationship
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -72,6 +73,7 @@ class AI_info(db.Model):
         return {
             'id': self.id,
             'questions': self.questions,
+            'responses': self.responses,
             'file_id': self.file_id,  # Correct field referencing the File
             'user_id': self.user_id,  # Correct field referencing the User
         }

@@ -1,49 +1,4 @@
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useNavigate } from 'react-router-dom';
-
-// function Dashboard() {
-//   const [bots, setBots] = useState([]);
-//   const [error, setError] = useState('');
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     const fetchBots = async () => {
-//       try {
-//         const userId = sessionStorage.getItem('userId');
-//         const response = await axios.get('http://localhost:5000/bots', {
-//           headers: {
-//             'userId': userId,
-//           },
-//         });
-//         setBots(response.data.bots);
-//       } catch (err) {
-//         setError('Failed to fetch bots');
-//       }
-//     };
-
-//     fetchBots();
-//   }, []);
-
-//   return (
-//     <div className="dashboard">
-//       <h2>Welcome to Dashboard</h2>
-//       <button onClick={() => navigate('/upload')}>Upload File</button>
-//       {/* <button onClick={() => navigate('/bots')}>Manage Bots</button> */}
-//       {error && <p>{error}</p>}
-//       {/* <h3>Your Bots</h3> */}
-//       {/* <ul>
-//         {bots.map((bot) => (
-//           <li key={bot.id}>{bot.bot_name}</li>
-//         ))}
-//       </ul> */}
-//     </div>
-//   );
-// }
-
-// export default Dashboard;
-
-
+//Dashboard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -57,7 +12,7 @@ function Dashboard() {
   const userId = sessionStorage.getItem('userId');
 
   // Fetch list of bots associated with the user
-  const fetchBots = async () => {
+  const fetchBots = async () => { 
     try {
       const res = await axios.get('http://localhost:5000/bots', {
         headers: {
