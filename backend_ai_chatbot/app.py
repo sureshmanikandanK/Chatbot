@@ -14,7 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Database%40123@localhost/Chat_Bot'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Database%40123@localhost/Chat_bot2'
 app.config['csv_file'] = 'uploads/csv'
 app.config['ALLOWED_EXTENSIONS'] = {"csv"}
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -44,3 +44,4 @@ with app.app_context():
 
 if __name__ == "__main__":
     app.run(debug=True)
+ 

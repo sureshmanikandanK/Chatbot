@@ -116,7 +116,7 @@ function FileUpload() {
             fullWidth
             margin="normal"
             onChange={(e) => setFile(e.target.files[0])}
-            inputProps={{ accept: ".csv" }} // Only allow CSV files
+            inputProps={{ accept: ".csv, .pdf, .docx, .xlsx, .xls, .txt" }} // Only allow CSV files
           />
 
           {/* Display loading spinner while uploading */}

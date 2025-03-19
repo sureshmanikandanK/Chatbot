@@ -6,7 +6,7 @@ from bot import bot_create, chat, get_chat_history, get_bot, bot_delete,delete_c
 from file import upload_file
 
 # Blueprint Setup
-auth_routes = Blueprint('auth_routes', __name__)
+auth_routes = Blueprint('auth_routes', __name__) 
 bot_routes = Blueprint('bot_routes', __name__)
 file_routes = Blueprint('file_routes', __name__)
 
